@@ -17,10 +17,12 @@ export default class Questionnaire extends H5P.EventDispatcher {
    * @param uiElements
    * @param uiElements.buttonLabels
    * @param uiElements.requiredMessage
+   * @param behaviouralSettings
    * @param contentId
    * @param contentData
+   * 
    */
-  constructor({questionnaireElements = [], successScreenOptions = {}, uiElements = {}}, contentId = null, contentData = {}) {
+  constructor({questionnaireElements = [], successScreenOptions = {}, uiElements = {}, behaviouralSettings = {enableViewRights: true, enableEditRights: true}}, contentId = null, contentData = {}) {
     super();
 
     this.contentId = contentId;
@@ -28,6 +30,12 @@ export default class Questionnaire extends H5P.EventDispatcher {
       questionnaireElements: [],
       currentIndex: 0
     };
+
+    if(behaviouralSettings.enableViewRights) {
+      // Must enable the success screen in order to go backwards to view/edit answers
+      successScreenOptions.enableSuccessScreen = true;
+    }
+
 
     uiElements = H5P.jQuery.extend(true, {
       buttonLabels: {
@@ -138,6 +146,9 @@ export default class Questionnaire extends H5P.EventDispatcher {
       if (this.state.finished) {
         // Resume functionality
         successScreenOptions.enableSuccessScreen ? this.showSuccessScreen() : this.showSubmitScreen();
+
+        // Set footer buttons correctly
+        footer.setForwardNavigationButton("continue");
       }
       else {
         // If currentIndex > 0, it means we are resuming
@@ -189,6 +200,7 @@ export default class Questionnaire extends H5P.EventDispatcher {
     this.createSuccessScreen = function () {
       this.successScreen = new SuccessScreen(
         successScreenOptions,
+        behaviouralSettings,
         this
       );
 
@@ -197,6 +209,12 @@ export default class Questionnaire extends H5P.EventDispatcher {
        * success screen page.
        */
       this.successScreen.on('imageLoaded', () => {
+        this.trigger('resize');
+      });
+
+      this.successScreen.on('previous', () => {
+        this.successScreen.hide();
+        this.hideQuestion(false);
         this.trigger('resize');
       });
 
@@ -237,6 +255,12 @@ export default class Questionnaire extends H5P.EventDispatcher {
       this.trigger('resize');
     };
 
+    this.setSubmitScreenAsCompleted = function () {
+      document.querySelector(".h5p-questionnaire-button.previous").style.display = "none";
+      document.querySelector(".h5p-questionnaire-button.submit").style.display = "none";
+      document.querySelector(".h5p-questionnaire-submit-screen-subtitle").innerHTML = "Submitted!";
+    }
+
     /**
      * Handle submitting of questionnaire
      *
@@ -251,9 +275,34 @@ export default class Questionnaire extends H5P.EventDispatcher {
         this.trigger('noSuccessScreen');
       }
 
+      if (!successScreenOptions.enableSuccessScreen && !behaviouralSettings.enableViewRights) {
+        this.setSubmitScreenAsCompleted();
+      }
+
+      // Handle view / edit rights
+      if(!behaviouralSettings.enableEditRights) {
+        this.lockAnswers();
+      }
+
       this.state.finished = true;
       this.triggerXAPI('completed');
     };
+
+    /**
+     * Makes all question instances readonly
+     */
+    this.lockAnswers = function () {
+      const openEnded = document.querySelectorAll(".h5p-open-ended-question-input");
+      const multiChoice = document.querySelectorAll(".h5p-simple-multiple-choice-alternative-input");
+      for(const openEndedQuestion of openEnded) {
+        openEndedQuestion.setAttribute("readonly", "true");
+        openEndedQuestion.style.fontStyle = "italic";
+      }
+
+      for(const multiChoiceQuestion of multiChoice) {
+        multiChoiceQuestion.setAttribute("disabled", "true");
+      }
+    }
 
     /**
      * Create a Footer instance
@@ -270,7 +319,6 @@ export default class Questionnaire extends H5P.EventDispatcher {
         this.move(this.state.currentIndex - 1);
       });
 
-      footer.trigger('disable-previous');
       this.footer = footer;
 
       return footer;
@@ -384,6 +432,14 @@ export default class Questionnaire extends H5P.EventDispatcher {
     this.attach = function ($wrapper) {
       $wrapper.get(0).classList.add('h5p-questionnaire-wrapper');
       $wrapper.get(0).appendChild(questionnaireWrapper);
+
+      if(this.state.finished && !behaviouralSettings.enableEditRights) {
+        this.lockAnswers();
+      }
+
+      if (this.state.finished && !successScreenOptions.enableSuccessScreen && !behaviouralSettings.enableViewRights) {
+        this.setSubmitScreenAsCompleted();
+      }
     };
 
     /**
@@ -439,6 +495,10 @@ export default class Questionnaire extends H5P.EventDispatcher {
 
         questionnaireElements[idx].library.userDatas.state = question;
       });
+
+      
+
+
     };
 
     this.setPreviousState();
