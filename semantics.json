@@ -77,9 +77,9 @@
     ]
   },
   {
-    "name": "behaviouralSettings",
+    "name": "behavioralSettings",
     "type": "group",
-    "label": "Behavioural Settings",
+    "label": "Behavioral Settings",
     "importance": "medium",
     "fields": [
       {

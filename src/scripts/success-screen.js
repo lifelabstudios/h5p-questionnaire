@@ -4,7 +4,7 @@ import Utils from "./utils";
 export default class SuccessScreen extends H5P.EventDispatcher {
   constructor(
     { successScreenImage = {}, successMessage = "" },
-    behaviouralSettings = {},
+    behavioralSettings = {},
     parent
   ) {
     super();
@@ -45,11 +45,11 @@ export default class SuccessScreen extends H5P.EventDispatcher {
     centeredElements.appendChild(successIcon);
     centeredElements.appendChild(successText);
 
-    const backButtonLabel = behaviouralSettings.enableEditRights
+    const backButtonLabel = behavioralSettings.enableEditRights
       ? "Edit Answers"
       : "View Answers";
 
-    if (behaviouralSettings.enableViewRights) {
+    if (behavioralSettings.enableViewRights) {
       this.wrapper.appendChild(
         Utils.createButton(backButtonLabel, "previous", this)
       );

@@ -1,14 +1,13 @@
-import './styles/children-styles.css';
-import './styles/questionnaire.css';
-import SuccessScreen from './success-screen';
-import SubmitScreen from './submit-screen';
-import RequiredMessage from './required-message';
-import Footer from './footer';
-import ProgressBar from './progress-bar/progress-bar';
-import QuestionContent from './question-content';
+import "./styles/children-styles.css";
+import "./styles/questionnaire.css";
+import SuccessScreen from "./success-screen";
+import SubmitScreen from "./submit-screen";
+import RequiredMessage from "./required-message";
+import Footer from "./footer";
+import ProgressBar from "./progress-bar/progress-bar";
+import QuestionContent from "./question-content";
 
 export default class Questionnaire extends H5P.EventDispatcher {
-
   /**
    * Constructor for questionnaire
    * @param questionnaireElements
@@ -17,57 +16,74 @@ export default class Questionnaire extends H5P.EventDispatcher {
    * @param uiElements
    * @param uiElements.buttonLabels
    * @param uiElements.requiredMessage
-   * @param behaviouralSettings
+   * @param behavioralSettings
    * @param contentId
    * @param contentData
-   * 
+   *
    */
-  constructor({questionnaireElements = [], successScreenOptions = {}, uiElements = {}, behaviouralSettings = {enableViewRights: true, enableEditRights: true}}, contentId = null, contentData = {}) {
+  constructor(
+    {
+      questionnaireElements = [],
+      successScreenOptions = {},
+      uiElements = {},
+      behavioralSettings = { enableViewRights: true, enableEditRights: true },
+    },
+    contentId = null,
+    contentData = {}
+  ) {
     super();
 
     this.contentId = contentId;
     this.state = {
       questionnaireElements: [],
-      currentIndex: 0
+      currentIndex: 0,
     };
 
-    if(behaviouralSettings.enableViewRights) {
+    if (behavioralSettings.enableViewRights) {
       // Must enable the success screen in order to go backwards to view/edit answers
-      successScreenOptions.enableSuccessScreen = true;
+      successScreenOptions.enableSuccessScreen =
+        behavioralSettings.enableViewRights;
     }
 
-
-    uiElements = H5P.jQuery.extend(true, {
-      buttonLabels: {
-        prevLabel: 'Back',
-        nextLabel: 'Next',
-        submitLabel: 'Submit',
-        continueLabel: 'Continue'
+    uiElements = H5P.jQuery.extend(
+      true,
+      {
+        buttonLabels: {
+          prevLabel: "Back",
+          nextLabel: "Next",
+          submitLabel: "Submit",
+          continueLabel: "Continue",
+        },
+        accessibility: {
+          requiredTextExitLabel: "Close error message",
+          progressBarText: "Question %current of %max",
+        },
+        requiredMessage: "This question requires an answer",
+        requiredText: "required",
+        submitScreenTitle: "You successfully answered all of the questions",
+        submitScreenSubtitle: "Click below to submit your answers",
       },
-      accessibility: {
-        requiredTextExitLabel: "Close error message",
-        progressBarText: 'Question %current of %max'
-      },
-      requiredMessage: 'This question requires an answer',
-      requiredText: 'required',
-      submitScreenTitle: 'You successfully answered all of the questions',
-      submitScreenSubtitle: 'Click below to submit your answers'
-    }, uiElements);
+      uiElements
+    );
 
     /**
      * Instantiate all questions
      * @return {Element}
      */
     this.createQuestionnaireBody = function () {
-      const content = document.createElement('div');
-      content.className = 'h5p-questionnaire-content';
+      const content = document.createElement("div");
+      content.className = "h5p-questionnaire-content";
 
-      questionnaireElements.forEach(({requiredField, library}, index) => {
-        if (typeof library !== 'object' || !library.library) {
+      questionnaireElements.forEach(({ requiredField, library }, index) => {
+        if (typeof library !== "object" || !library.library) {
           return; // No library selected
         }
 
-        const questionContent = this.createQuestionContent(requiredField, library, index);
+        const questionContent = this.createQuestionContent(
+          requiredField,
+          library,
+          index
+        );
         content.appendChild(questionContent.getElement());
         this.state.questionnaireElements.push(questionContent);
       });
@@ -96,20 +112,20 @@ export default class Questionnaire extends H5P.EventDispatcher {
         contentId: this.contentId,
         requiredField,
         index: index,
-        uiElements
+        uiElements,
       });
-      questionContent.on('handledInteraction', () => {
-        this.trigger('resize');
-        this.requiredMessage.trigger('hideMessage');
-        this.triggerXAPI('interacted');
+      questionContent.on("handledInteraction", () => {
+        this.trigger("resize");
+        this.requiredMessage.trigger("hideMessage");
+        this.triggerXAPI("interacted");
       });
 
-      questionContent.on('allow-finish-changed', () => {
+      questionContent.on("allow-finish-changed", () => {
         this.setForwardNavigationButton(this.state.currentIndex);
       });
 
-      questionContent.on('changed', () => {
-        this.requiredMessage.trigger('hideMessage');
+      questionContent.on("changed", () => {
+        this.requiredMessage.trigger("hideMessage");
       });
       return questionContent;
     };
@@ -119,15 +135,24 @@ export default class Questionnaire extends H5P.EventDispatcher {
      * @return {Element} questionnaire element
      */
     this.createQuestionnaire = function () {
-      const questionnaireWrapper = document.createElement('div');
-      questionnaireWrapper.className = 'h5p-questionnaire';
-      if (questionnaireElements.length === 1 && !questionnaireElements[0].library) {
-        questionnaireWrapper.classList.add('h5p-invalid-questionnaire');
-        questionnaireWrapper.textContent = 'Invalid content';
+      const questionnaireWrapper = document.createElement("div");
+      questionnaireWrapper.className = "h5p-questionnaire";
+      if (
+        questionnaireElements.length === 1 &&
+        !questionnaireElements[0].library
+      ) {
+        questionnaireWrapper.classList.add("h5p-invalid-questionnaire");
+        questionnaireWrapper.textContent = "Invalid content";
         return questionnaireWrapper;
       }
 
-      this.createProgressBar(questionnaireElements).attachTo(questionnaireWrapper);
+      if (this.state.finished) {
+        this.state.currentIndex = questionnaireElements.length - 1;
+      }
+
+      this.createProgressBar(questionnaireElements).attachTo(
+        questionnaireWrapper
+      );
 
       const content = this.createQuestionnaireBody();
       questionnaireWrapper.appendChild(content);
@@ -144,20 +169,20 @@ export default class Questionnaire extends H5P.EventDispatcher {
       }
 
       if (this.state.finished) {
-        // Resume functionality
-        successScreenOptions.enableSuccessScreen ? this.showSuccessScreen() : this.showSubmitScreen();
+        // Determine if we should show the submit screen or the success screen, as they are different screens
+        successScreenOptions.enableSuccessScreen
+          ? this.showSuccessScreen()
+          : this.showSubmitScreen();
 
-        // Set footer buttons correctly
+        // Set footer buttons to point forward in linear order of the questions
         footer.setForwardNavigationButton("continue");
-      }
-      else {
+      } else {
         // If currentIndex > 0, it means we are resuming
         this.move(this.state.currentIndex, this.state.currentIndex > 0);
       }
 
       return questionnaireWrapper;
     };
-
 
     /**
      * Create submit screen
@@ -168,15 +193,15 @@ export default class Questionnaire extends H5P.EventDispatcher {
         title: uiElements.submitScreenTitle,
         subtitle: uiElements.submitScreenSubtitle,
         backLabel: uiElements.buttonLabels.prevLabel,
-        submitLabel: uiElements.buttonLabels.submitLabel
+        submitLabel: uiElements.buttonLabels.submitLabel,
       });
 
-      this.submitScreen.on('submit', this.handleSubmit.bind(this));
+      this.submitScreen.on("submit", this.handleSubmit.bind(this));
 
-      this.submitScreen.on('previous', () => {
+      this.submitScreen.on("previous", () => {
         this.submitScreen.hide();
         this.hideQuestion(false);
-        this.trigger('resize');
+        this.trigger("resize");
       });
 
       return this.submitScreen;
@@ -188,7 +213,9 @@ export default class Questionnaire extends H5P.EventDispatcher {
      * @param {boolean} hide Will hide if true, otherwise it will show
      */
     this.hideQuestion = function (hide) {
-      this.state.questionnaireElements[this.state.questionnaireElements.length - 1].hide(hide);
+      this.state.questionnaireElements[
+        this.state.questionnaireElements.length - 1
+      ].hide(hide);
       this.progressBar.hide(hide);
       this.footer.hide(hide);
     };
@@ -200,7 +227,7 @@ export default class Questionnaire extends H5P.EventDispatcher {
     this.createSuccessScreen = function () {
       this.successScreen = new SuccessScreen(
         successScreenOptions,
-        behaviouralSettings,
+        behavioralSettings,
         this
       );
 
@@ -208,14 +235,14 @@ export default class Questionnaire extends H5P.EventDispatcher {
        * Need to resize when image is loaded in case we are restoring the
        * success screen page.
        */
-      this.successScreen.on('imageLoaded', () => {
-        this.trigger('resize');
+      this.successScreen.on("imageLoaded", () => {
+        this.trigger("resize");
       });
 
-      this.successScreen.on('previous', () => {
+      this.successScreen.on("previous", () => {
         this.successScreen.hide();
         this.hideQuestion(false);
-        this.trigger('resize');
+        this.trigger("resize");
       });
 
       return this.successScreen;
@@ -230,7 +257,7 @@ export default class Questionnaire extends H5P.EventDispatcher {
       this.progressBar = new ProgressBar({
         currentIndex: this.state.currentIndex + 1,
         maxIndex: questionnaireElements.length,
-        uiElements
+        uiElements,
       });
 
       return this.progressBar;
@@ -242,7 +269,7 @@ export default class Questionnaire extends H5P.EventDispatcher {
     this.showSubmitScreen = function () {
       this.hideQuestion(true);
       this.submitScreen.show();
-      this.trigger('resize');
+      this.trigger("resize");
     };
 
     /**
@@ -252,14 +279,19 @@ export default class Questionnaire extends H5P.EventDispatcher {
       this.hideQuestion(true);
       this.submitScreen.hide();
       this.successScreen.show();
-      this.trigger('resize');
+      this.trigger("resize");
     };
 
     this.setSubmitScreenAsCompleted = function () {
-      document.querySelector(".h5p-questionnaire-button.previous").style.display = "none";
-      document.querySelector(".h5p-questionnaire-button.submit").style.display = "none";
-      document.querySelector(".h5p-questionnaire-submit-screen-subtitle").innerHTML = "Submitted!";
-    }
+      document.querySelector(
+        ".h5p-questionnaire-button.previous"
+      ).style.display = "none";
+      document.querySelector(".h5p-questionnaire-button.submit").style.display =
+        "none";
+      document.querySelector(
+        ".h5p-questionnaire-submit-screen-subtitle"
+      ).innerHTML = "Submitted!";
+    };
 
     /**
      * Handle submitting of questionnaire
@@ -270,39 +302,45 @@ export default class Questionnaire extends H5P.EventDispatcher {
     this.handleSubmit = function () {
       if (successScreenOptions.enableSuccessScreen) {
         this.showSuccessScreen();
-      }
-      else {
-        this.trigger('noSuccessScreen');
+      } else {
+        this.trigger("noSuccessScreen");
       }
 
-      if (!successScreenOptions.enableSuccessScreen && !behaviouralSettings.enableViewRights) {
+      if (
+        !successScreenOptions.enableSuccessScreen &&
+        !behavioralSettings.enableViewRights
+      ) {
         this.setSubmitScreenAsCompleted();
       }
 
       // Handle view / edit rights
-      if(!behaviouralSettings.enableEditRights) {
+      if (!behavioralSettings.enableEditRights) {
         this.lockAnswers();
       }
 
       this.state.finished = true;
-      this.triggerXAPI('completed');
+      this.triggerXAPI("completed");
     };
 
     /**
      * Makes all question instances readonly
      */
     this.lockAnswers = function () {
-      const openEnded = document.querySelectorAll(".h5p-open-ended-question-input");
-      const multiChoice = document.querySelectorAll(".h5p-simple-multiple-choice-alternative-input");
-      for(const openEndedQuestion of openEnded) {
+      const openEnded = document.querySelectorAll(
+        ".h5p-open-ended-question-input"
+      );
+      const multiChoice = document.querySelectorAll(
+        ".h5p-simple-multiple-choice-alternative-input"
+      );
+      for (const openEndedQuestion of openEnded) {
         openEndedQuestion.setAttribute("readonly", "true");
         openEndedQuestion.style.fontStyle = "italic";
       }
 
-      for(const multiChoiceQuestion of multiChoice) {
+      for (const multiChoiceQuestion of multiChoice) {
         multiChoiceQuestion.setAttribute("disabled", "true");
       }
-    }
+    };
 
     /**
      * Create a Footer instance
@@ -310,12 +348,12 @@ export default class Questionnaire extends H5P.EventDispatcher {
      */
     this.createFooter = function () {
       const footer = new Footer(uiElements.buttonLabels);
-      footer.on('next', () => {
+      footer.on("next", () => {
         if (this.move(this.state.currentIndex + 1)) {
           this.showSubmitScreen();
         }
       });
-      footer.on('previous', () => {
+      footer.on("previous", () => {
         this.move(this.state.currentIndex - 1);
       });
 
@@ -334,7 +372,8 @@ export default class Questionnaire extends H5P.EventDispatcher {
       }
 
       const allowFinish = this.state.questionnaireElements[index].allowFinish();
-      const buttonType = (allowFinish === QuestionContent.AllowFinish.ALLOW ? 'next' : 'continue');
+      const buttonType =
+        allowFinish === QuestionContent.AllowFinish.ALLOW ? "next" : "continue";
       this.footer.setForwardNavigationButton(buttonType);
     };
 
@@ -342,8 +381,8 @@ export default class Questionnaire extends H5P.EventDispatcher {
      * Trigger required question to any listeners
      */
     this.triggerRequiredQuestion = function () {
-      this.requiredMessage.trigger('showMessage');
-      this.trigger('resize');
+      this.requiredMessage.trigger("showMessage");
+      this.trigger("resize");
     };
 
     /**
@@ -355,7 +394,7 @@ export default class Questionnaire extends H5P.EventDispatcher {
      * @return {boolean} inidcates if submit screen should be shown
      */
     this.move = function (index, force = false) {
-      const {currentIndex, questionnaireElements} = this.state;
+      const { currentIndex, questionnaireElements } = this.state;
       const element = questionnaireElements[currentIndex];
 
       if (index < 0) {
@@ -371,10 +410,13 @@ export default class Questionnaire extends H5P.EventDispatcher {
         }
 
         // Give question element a chance to stop the move
-        if (element.allowFinish() === QuestionContent.AllowFinish.DENY && !element.finish()) {
+        if (
+          element.allowFinish() === QuestionContent.AllowFinish.DENY &&
+          !element.finish()
+        ) {
           // Change forward button from continue to Next or Submit
           this.setForwardNavigationButton(currentIndex);
-          this.trigger('resize');
+          this.trigger("resize");
           return false;
         }
       }
@@ -385,28 +427,32 @@ export default class Questionnaire extends H5P.EventDispatcher {
       }
 
       // Hide previous button on first question
-      this.footer.trigger(index === 0 ? 'disable-previous' : 'enable-previous');
+      this.footer.trigger(index === 0 ? "disable-previous" : "enable-previous");
 
       this.setForwardNavigationButton(index);
 
-      this.requiredMessage.trigger('hideMessage');
+      this.requiredMessage.trigger("hideMessage");
       questionnaireElements[currentIndex].hide(true);
       const nextQuestion = questionnaireElements[index];
       nextQuestion.hide(false);
-      const nextQuestionHeader = nextQuestion.getElement().querySelector('.h5p-subcontent-question');
+      const nextQuestionHeader = nextQuestion
+        .getElement()
+        .querySelector(".h5p-subcontent-question");
       this.progressBar.attachNumberWidgetTo(nextQuestionHeader);
-      this.trigger('resize');
+      this.trigger("resize");
 
       this.state = Object.assign(this.state, {
-        currentIndex: index
+        currentIndex: index,
       });
       this.progressBar.move(index + 1);
 
       // Don't send xApi event when initializing
       if (index !== 0 && currentIndex !== 0) {
-        const progressedEvent = this.createXAPIEventTemplate('progressed');
+        const progressedEvent = this.createXAPIEventTemplate("progressed");
         if (progressedEvent.data.statement.object) {
-          progressedEvent.data.statement.object.definition.extensions['http://id.tincanapi.com/extension/ending-point'] = index + 1;
+          progressedEvent.data.statement.object.definition.extensions[
+            "http://id.tincanapi.com/extension/ending-point"
+          ] = index + 1;
           this.trigger(progressedEvent);
         }
       }
@@ -430,15 +476,19 @@ export default class Questionnaire extends H5P.EventDispatcher {
      * @param {jQuery} $wrapper
      */
     this.attach = function ($wrapper) {
-      $wrapper.get(0).classList.add('h5p-questionnaire-wrapper');
+      $wrapper.get(0).classList.add("h5p-questionnaire-wrapper");
       $wrapper.get(0).appendChild(questionnaireWrapper);
 
-      if(this.state.finished && !behaviouralSettings.enableEditRights) {
-        this.lockAnswers();
-      }
-
-      if (this.state.finished && !successScreenOptions.enableSuccessScreen && !behaviouralSettings.enableViewRights) {
-        this.setSubmitScreenAsCompleted();
+      if (this.state.finished) {
+        if (!behavioralSettings.enableEditRights) {
+          this.lockAnswers();
+        }
+        if (
+          !successScreenOptions.enableSuccessScreen &&
+          !behavioralSettings.enableViewRights
+        ) {
+          this.setSubmitScreenAsCompleted();
+        }
       }
     };
 
@@ -459,7 +509,7 @@ export default class Questionnaire extends H5P.EventDispatcher {
         questions,
         progress: this.state.currentIndex,
         finished: this.state.finished,
-        version: 1
+        version: 1,
       };
     };
 
@@ -482,7 +532,8 @@ export default class Questionnaire extends H5P.EventDispatcher {
         // Content state was changed in version 1. Before that there was no versioning.
         // In version 1, currentIndex's max value is (numQuestions - 1). Before that,
         // currentIndex could be numQuestions to indicate success screen was shown
-        const overflow = (this.state.currentIndex >= questionnaireElements.length);
+        const overflow =
+          this.state.currentIndex >= questionnaireElements.length;
         if (previousState.version === undefined && overflow) {
           this.state.currentIndex = questionnaireElements.length - 1;
           this.state.finished = true;
@@ -495,10 +546,6 @@ export default class Questionnaire extends H5P.EventDispatcher {
 
         questionnaireElements[idx].library.userDatas.state = question;
       });
-
-      
-
-
     };
 
     this.setPreviousState();
