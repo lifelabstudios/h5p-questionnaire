@@ -1,7 +1,6 @@
-import './styles/buttons.css';
+import "./styles/buttons.css";
 
 export default class Utils {
-
   /**
    * Creates a button
    *
@@ -12,14 +11,14 @@ export default class Utils {
    * @return {HTMLElement}
    */
   static createButton(label, type, dispatcher) {
-    const button = Utils.createElement('button', {
-      className: 'h5p-questionnaire-button ' + type,
-      type: 'button',
-      innerHTML: label
+    const button = Utils.createElement("button", {
+      className: "h5p-questionnaire-button " + type,
+      type: "button",
+      innerHTML: label,
     });
 
     if (dispatcher) {
-      button.addEventListener('click', () => {
+      button.addEventListener("click", () => {
         dispatcher.trigger(type);
       });
     }
@@ -38,7 +37,7 @@ export default class Utils {
   static createElement(tagName, attributes) {
     const element = document.createElement(tagName);
 
-    Object.keys(attributes).forEach(key => {
+    Object.keys(attributes).forEach((key) => {
       element[key] = attributes[key];
     });
 
@@ -53,6 +52,6 @@ export default class Utils {
    * @return {HTMLElement}
    */
   static createDiv(attributes) {
-    return Utils.createElement('div', attributes);
+    return Utils.createElement("div", attributes);
   }
 }

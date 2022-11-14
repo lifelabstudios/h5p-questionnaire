@@ -26,10 +26,7 @@
           "label": "Library",
           "importance": "high",
           "description": "Choose a library",
-          "options": [
-            "H5P.OpenEndedQuestion 1.0",
-            "H5P.SimpleMultiChoice 1.1"
-          ]
+          "options": ["H5P.OpenEndedQuestion 1.0", "H5P.SimpleMultiChoice 1.1"]
         },
         {
           "name": "requiredField",
@@ -66,9 +63,7 @@
             "importance": "low",
             "type": "library",
             "optional": true,
-            "options": [
-              "H5P.Image 1.1"
-            ]
+            "options": ["H5P.Image 1.1"]
           }
         ]
       },
@@ -78,6 +73,39 @@
         "label": "Text to display on submit",
         "importance": "low",
         "default": "You have completed the questionnaire."
+      }
+    ]
+  },
+  {
+    "name": "behavioralSettings",
+    "type": "group",
+    "label": "Behavioral Settings",
+    "importance": "medium",
+    "fields": [
+      {
+        "name": "enableViewRights",
+        "type": "boolean",
+        "label": "User is allowed to view answers after submission",
+        "description": "The user is allowed to return to previously seen pages from the results screen and only view their answers.",
+        "default": true,
+        "importance": "medium"
+      },
+      {
+        "name": "enableEditRights",
+        "type": "boolean",
+        "label": "User is allowed to edit answers after submission",
+        "description": "The user is allowed to return to previously seen pages from the results screen and change their answers.",
+        "default": true,
+        "importance": "medium",
+        "widget": "showWhen",
+        "showWhen": {
+          "rules": [
+            {
+              "field": "enableViewRights",
+              "equals": true
+            }
+          ]
+        }
       }
     ]
   },
